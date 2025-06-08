@@ -169,10 +169,10 @@ export default async function ProjectDetailPage({ params }: pageProps) {
         {/* 반응형 디자인 */}
         <section
           id="responsive-design"
-          className="min-h-[950px] scroll-mt-40 md:scroll-mt-32"
+          className="min-h-[950px] scroll-mt-40 md:scroll-mt-32 mb-10"
         >
           <h2 className="text-lg font-bold mb-4">반응형 디자인</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {/* 모바일 */}
             <div className="flex flex-col items-center bg-white shadow-md rounded-lg p-4">
               <p className="font-medium text-sm mb-2">Mobile</p>
@@ -200,7 +200,7 @@ export default async function ProjectDetailPage({ params }: pageProps) {
             </div>
 
             {/* PC */}
-            <div className="flex flex-col items-center bg-white shadow-md rounded-lg p-4">
+            <div className="flex flex-col items-center bg-white shadow-md rounded-lg p-4 md:col-span-2 xl:col-auto">
               <p className="font-medium text-sm mb-2">PC</p>
               <video
                 src={project?.vedio.pc}

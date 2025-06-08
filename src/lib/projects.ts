@@ -5,7 +5,7 @@ export const projects: Project[] = [
     title: "HyangNang",
     description: "프래그런스 온라인 쇼핑몰 웹 애플리케이션",
     overview:
-      "이 프로젝트는 Next.js, TypeScript 기반의 온라인 쇼핑몰 웹 애플리케이션으로, 상품 탐색부터 주문 및 결제까지의 전 과정을 구현했습니다. 소셜 로그인(OAuth), 결제 연동(TossPayments), DB설계(Prisma), SSR 최적화 등 실제 서비스를 위한 기술 스택과 구조를 경험할 수 있었습니다.",
+      "이 프로젝트는 Next.js, TypeScript 기반의 온라인 쇼핑몰 웹 애플리케이션으로, 상품 탐색부터 주문 및 결제까지의 전 과정을 구현했습니다. 소셜 로그인(OAuth), 결제 연동(TossPayments), DB설계(Prisma), SSR 최적화 등 실제 서비스를 위한 기술 스택과 문제 해결을 경험할 수 있었습니다.",
     period: [
       { label: "기간", value: "2025.03 - 2025.05" },
       { label: "기여도", value: "개인 프로젝트 (100%)" },
@@ -55,19 +55,19 @@ export const projects: Project[] = [
       {
         title: "소셜 로그인 세션 복원 오류 해결 경험",
         subtitle:
-          "소셜 로그인 사용자에게도 끊김 없는 UX를 제공하기 위한 인증 흐름 개선 프로젝트",
+          "소셜 로그인 사용자에게도 끊김 없는 UX를 제공하기 위한 인증 흐름 개선",
         content: [
           {
-            label: "프로젝트 배경",
+            label: "문제 상황",
             text: `NextAuth 기반으로 소셜 로그인을 구현했지만, 사용자가 주소를 저장할 때 userId가 전달되지 않아 API 호출에 실패하는 문제가 있었습니다.`,
           },
           {
-            label: "문제 분석",
-            text: `NextAuth의 세션 복원 시 user 객체가 초기 상태로 비어 있어 token.id 값이 세팅되지 않는 것이 원인이었습니다.`,
+            label: "원인 분석",
+            text: `NextAuth의 세션 복원 시 jwt()에서 전달되는 user 객체가 비어 있어 token.id 값이 세팅되지 않는 것이 원인이었습니다.`,
           },
           {
             label: "해결 과정",
-            text: `JWT 콜백 단계에서 token.email로 사용자를 DB에서 조회하여 token.id를 수동 설정하였고, 인증 흐름 전체를 다시 점검하여 로그인 직후뿐 아니라 세션 유지 중에도 사용자 정보가 안정적으로 유지되도록 처리했습니다.`,
+            text: `JWT 콜백 단계에서 token.email로 사용자를 DB에서 조회하여 token.id를 수동 설정하는 코드를 추가하고, 인증 흐름 전체를 다시 점검하여 로그인 직후뿐 아니라 세션 유지 중에도 사용자 정보가 안정적으로 유지되도록 처리했습니다.`,
           },
           {
             label: "성과 및 배운 점",
@@ -77,32 +77,31 @@ export const projects: Project[] = [
         stack: ["Next.js", "NextAuth", "Prisma", "OAuth", "JWT"],
       },
       {
-        title: "주소 등록 기능 리팩토링 – Context API 도입",
+        title: "주소 등록 기능 Context API로 리팩토링",
         subtitle: "유지보수성과 확장성을 고려해 상태 관리 구조를 재설계한 경험",
         content: [
           {
-            label: "프로젝트 배경",
+            label: "문제 상황",
             text: `주소 등록 페이지에서 상태 관리, 유효성 검사, API 호출 등이 모두 하나의 컴포넌트에 집중되어 있었습니다.`,
           },
           {
             label: "개선 목표",
-            text: `역할 분리와 관심사 분리를 통해 코드 구조를 명확하게 만들고, 상태 재사용성을 높이고자 했습니다.`,
+            text: `역할 분리를 통해 코드 구조를 명확하게 만들고, 상태 재사용성을 높이고자 했습니다.`,
           },
           {
             label: "구현 내용",
-            text: `Context API 기반 AddressProvider를 도입해 상태를 분리하고, 유효성 검사 로직도 훅으로 추출하여 테스트 가능하게 개선했습니다.`,
+            text: `Context API 기반 AddressProvider를 도입해 상태를 분리하고, 유효성 검사 로직도 커스텀 훅으로 추출하여 테스트 가능하게 개선했습니다.`,
           },
           {
-            label: "성과 및 인사이트",
-            text: `컴포넌트 가독성과 유지보수성이 크게 향상되었고, 사용자 입장에서 더 빠르고 오류 없는 입력 경험을 제공할 수 있게 되었습니다.`,
+            label: "성과 및 배운 점",
+            text: `컴포넌트 가독성과 유지보수성이 향상되었고, 커스텀 훅 분리로 유효성 검사의 테스트 가능성을 높일 수 있었습니다.`,
           },
         ],
         stack: ["React", "Next.js", "Context API", "TypeScript", "SQLite3"],
       },
       {
         title: "배포 환경 OAuth/DB 오류 해결 (.env 설정 문제)",
-        subtitle:
-          "환경 설정 실수로 인한 배포 오류를 디버깅하고, 재현 가능한 설정 가이드를 만든 경험",
+        subtitle: "환경 변수 설정 실수로 인한 배포 오류를 디버깅한 경험",
         content: [
           {
             label: "문제 상황",
@@ -114,34 +113,38 @@ export const projects: Project[] = [
           },
           {
             label: "해결 과정",
-            text: `Vercel 대시보드에서 환경 변수를 추가하고, .env.example 템플릿을 작성해 재현 가능한 환경 구성을 만들었습니다.`,
+            text: `Vercel 대시보드에서 배포 서버 주소로 변경한 환경 변수를 추가하고, NEXT_PUBLIC_GOOGLE_REDIRECT_URI를 Vercel 환경 변수에 등록하기 전에 OAuth 콘솔에서 Authorized redirect URI에 Vercel URL을 등록했습니다.`,
           },
           {
-            label: "성과 및 개선점",
+            label: "성과 및 배운 점",
             text: `OAuth 인증 및 DB 연동이 안정적으로 작동했고, 환경 설정 자동화의 중요성을 체감할 수 있었습니다.`,
           },
         ],
         stack: ["Vercel", "Next.js", "Prisma", "OAuth", ".env"],
       },
       {
-        title: "Prisma 마이그레이션 오류 해결 및 DB 버전 관리 자동화",
+        title: "NextAuth 타입 확장으로 사용자 정보 활용 문제 해결",
         subtitle:
-          "마이그레이션 실패 원인을 파악하고 재현 가능한 DB 상태를 관리하는 경험",
+          "useSession에서 사용자 커스텀 필드를 안전하게 사용하는 방법 체득",
         content: [
           {
-            label: "문제 발생",
-            text: `Prisma 스키마 변경 후 migrate dev 명령이 실패하고 데이터베이스가 꼬이는 문제가 발생했습니다.`,
+            label: "문제 상황",
+            text: `NextAuth를 통해 로그인한 사용자 정보를 useSession()으로 가져올 때, 사용자 ID, 생년월일, 전화번호 등 커스텀 필드가 타입 미정으로 간주되어 TypeScript 에러가 발생했습니다.`,
           },
           {
-            label: "학습 및 해결",
-            text: `Prisma 명령어들의 차이점을 학습하고, 마이그레이션 충돌 방지를 위한 규칙을 수립하며 자동화 스크립트를 구성했습니다.`,
+            label: "원인 분석",
+            text: `NextAuth의 기본 Session 타입은 email, name 정도만 포함돼 있어, 사용자 정의 필드는 타입 정의를 따로 확장하지 않으면 타입 추론이 되지 않았습니다.`,
           },
           {
-            label: "성과",
-            text: `프로젝트의 DB 변경 이력을 명확히 관리하고, 모든 환경에서 일관된 스키마 동기화를 실현했습니다.`,
+            label: "해결 과정",
+            text: `types 폴더에 next-auth.d.ts 파일을 생성하고 'next-auth' 모듈을 확장해 User, Session, JWT 타입에 필요한 커스텀 필드를 정의했습니다. 그리고 tsconfig.json 파일의 types에 'next-auth'가 들어가 있는지 점검했습니다. 이후 useSession()을 사용할 때, 타입 오류 없이 안전하게 사용자 데이터를 활용할 수 있었습니다.`,
+          },
+          {
+            label: "성과 및 배운 점",
+            text: `NextAuth의 타입을 확장한 덕분에 로그인 후 세션에서 사용자 이름, 생년월일 등 커스텀 정보를 안정적으로 활용할 수 있었고, 타입 안정성을 바탕으로 개발 생산성과 유지보수성이 향상되었습니다. 타입 확장의 필요성과 이점을 체감한 경험이었습니다.`,
           },
         ],
-        stack: ["Prisma", "SQLite", "Next.js"],
+        stack: ["Next.js", "NextAuth", "TypeScript", "JWT", "Session"],
       },
     ],
   },
@@ -149,7 +152,7 @@ export const projects: Project[] = [
     title: "REELPICK",
     description: "개인 맞춤형 영화 추천 웹 애플리케이션",
     overview:
-      "이 프로젝트는 Next.js App Router와 TMDB API를 기반으로, 사용자의 영화 취향 태그를 분석하여 개인화된 추천 영화를 제공하는 웹 애플리케이션입니다. 태그 기반 필터링, 영화 상세 정보, 즐겨찾기 기능 등을 포함하며, 반응형 UI 및 직관적인 UX를 통해 사용자 중심의 콘텐츠 탐색 경험을 구현했습니다.",
+      "이 프로젝트는 Next.js App Router와 TMDB API를 기반으로, 사용자의 영화 취향 태그를 분석하여 개인화된 추천 영화를 제공하는 웹 애플리케이션입니다. 태그 기반 필터링, 영화 상세 정보, 즐겨찾기 및 평가하기 기능 등을 포함하며, 반응형 UI 및 직관적인 UX를 통해 사용자 중심의 콘텐츠 탐색 경험을 구현했습니다. 실시간으로 변화하는 외부 데이터를 받아와 가공하는 구조를 경험했습니다.",
     period: [
       { label: "기간", value: "2025.05" },
       { label: "기여도", value: "개인 프로젝트 (100%)" },
@@ -179,9 +182,9 @@ export const projects: Project[] = [
       "영화 검색 및 실시간 추천 기능 구현",
       "태그 선택 기반의 개인화된 영화 목록 제공",
       "각 영화의 상세 정보 페이지 구성 (장르, 출연진, 줄거리 등)",
-      "즐겨찾기 등록/해제 기능 (로컬 스토리지 저장)",
+      "즐겨찾기 등록/해제 및 별점 평가 기능 (로컬 스토리지 저장)",
       "반응형 디자인으로 다양한 디바이스에서 최적화된 UI 제공",
-      "에러 핸들링 및 로딩 상태 표시로 안정적인 사용자 경험 보장",
+      "에러 핸들링으로 안정적인 사용자 경험 보장",
     ],
     contents: [
       {
@@ -197,16 +200,16 @@ export const projects: Project[] = [
             text: `필요한 필드를 중심으로 API 응답을 재구성하고, 타입 정의와 예외 처리를 통해 안정적인 데이터 흐름을 설계했습니다.`,
           },
           {
-            label: "성과",
-            text: `사용자 입장에서 필요한 정보만 빠르게 확인할 수 있는 UI/UX를 구현할 수 있었습니다.`,
+            label: "성과 및 배운 점",
+            text: `다양한 API 쿼리 함수를 작성하며 외부 API 통신과 비동기 데이터 처리에 대한 이해를 높일 수 있었습니다. 사용자 입장에서 필요한 정보만 빠르게 확인할 수 있는 UI/UX를 구현할 수 있었습니다.`,
           },
         ],
-        stack: ["TMDB API", "Fetch", "TypeScript", "Next.js"],
+        stack: ["TMDB API", "Fetch", "TypeScript", "Next.js", "Tailwind"],
       },
       {
         title: "태그 기반 영화 추천 시스템 설계",
         subtitle:
-          "사용자 입력에 따라 추천 결과가 실시간으로 갱신되는 로직 구현",
+          "사용자 선호 장르 기반 태그 일치도에 따라 실시간으로 갱신되는 로직 구현",
         content: [
           {
             label: "개선 목표",
@@ -214,14 +217,14 @@ export const projects: Project[] = [
           },
           {
             label: "구현 내용",
-            text: `사용자가 별점 평가한 콘텐츠를 기반으로 선호도가 높은 태그를 선별한 후, 태그 선택에 따라 API 쿼리를 동적으로 구성하고 태그 일치도에 따라 추천 콘텐츠를 정렬하도록 구현했습니다.`,
+            text: `사용자가 별점 평가한 콘텐츠를 기반으로 선호도가 높은 태그를 선별한 후, 그 중에서 선택된 태그에 따라 API 쿼리를 동적으로 구성하고 태그 일치도에 따라 추천 콘텐츠를 정렬하도록 구현했습니다.`,
           },
           {
-            label: "성과",
-            text: `사용자 맞춤 추천 기능이 도입되어 영화 탐색 경험의 만족도가 향상되었습니다.`,
+            label: "성과 및 배운 점",
+            text: `평가 내역을 기반으로 선호도를 추리고 정보를 필터링하는 로직을 구현하면서 사용자 맞춤형 컨텐츠 제공이 어떻게 이뤄지는지 경험할 수 있었습니다.`,
           },
         ],
-        stack: ["React", "Next.js", "Tailwind", "Fetch"],
+        stack: ["React", "Next.js", "Fetch", "TMDB API"],
       },
       {
         title: "출연진 이미지 데이터 누락 문제 해결",
@@ -233,10 +236,10 @@ export const projects: Project[] = [
           },
           {
             label: "해결 과정",
-            text: `이미지 데이터가 없는 경우를 대비해 디폴트 이미지를 추가하고, 이미지가 없을 때 디폴트 이미지가 렌더링되도록 처리하여 UI 안정성을 확보했습니다.`,
+            text: `이미지 데이터가 없는 경우를 대비해 디폴트 이미지를 저장하고, 이미지가 없을 때 디폴트 이미지가 렌더링되도록 처리하여 UI 안정성을 확보했습니다.`,
           },
           {
-            label: "성과",
+            label: "성과 및 배운 점",
             text: `UI 레이아웃 깨짐 현상이 사라지고, 사용자에게 일관되고 깔끔한 화면을 제공할 수 있게 되었습니다.`,
           },
         ],
