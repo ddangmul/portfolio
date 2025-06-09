@@ -20,7 +20,7 @@ export const StickyNav = () => (
           주요 기능
         </a>
         <a href="#problem-solving" className="hover:text-[#a1a1a1]">
-          문제 해결 경험
+          기술 경험 & 문제 해결 사례
         </a>
         <a href="#responsive-design" className="hover:text-[#a1a1a1]">
           반응형 디자인
