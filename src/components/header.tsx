@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-html-link-for-pages */
 export const Header: React.FC = () => {
   return (
     <header

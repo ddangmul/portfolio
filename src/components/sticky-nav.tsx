@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-html-link-for-pages */
 export const StickyNav = () => (
   <nav
     className="sticky top-16 z-40 bg-white/80 shadow-sm backdrop-blur-sm"

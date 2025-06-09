@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-html-link-for-pages */
 const Footer: React.FC = () => {
   return (
     <footer
