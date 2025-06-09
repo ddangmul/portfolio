@@ -22,9 +22,10 @@ export const projects: Project[] = [
       { label: "결제", value: "Toss Payments API" },
       {
         label: "데이터베이스",
-        value: "SQLite3 (스키마 설계 및 초기 데이터 구성)",
+        value:
+          "(개발 단계) SQLite3로 스키마 설계 및 데이터 구성 / (배포 단계) PostgreSQL로 전환",
       },
-      { label: "API 통신", value: "Fetch API" },
+      { label: "API 통신", value: "Fetch API를 활용한 RESTful API 구현" },
       { label: "테스트", value: "Jest" },
       { label: "배포", value: "Vercel" },
     ],
@@ -64,10 +65,35 @@ export const projects: Project[] = [
           {
             label: "원인 분석",
             text: `NextAuth의 세션 복원 시 jwt()에서 전달되는 user 객체가 비어 있어 token.id 값이 세팅되지 않는 것이 원인이었습니다.`,
+            code: `  async jwt({ token, user, account }) {
+      if (user) {
+        token.id = user.id;
+        token.email = user.email;
+        token.username = user.username ?? null;
+        token.birthdate = user.birthdate ?? null;
+        token.mobile = user.mobile ?? null;
+      }
+
+      if (account?.provider === "google" && account?.access_token) {
+        token.accessToken = account.access_token; // 구글의 accessToken을 JWT에 추가
+      }
+
+      return token;
+    },`,
           },
           {
             label: "해결 과정",
             text: `JWT 콜백 단계에서 token.email로 사용자를 DB에서 조회하여 token.id를 수동 설정하는 코드를 추가하고, 인증 흐름 전체를 다시 점검하여 로그인 직후뿐 아니라 세션 유지 중에도 사용자 정보가 안정적으로 유지되도록 처리했습니다.`,
+            code: `   // 재로그인 시 user = undefined -> id 저장 안됨 등 문제 보완
+      if (!token.id && token.email) {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: token.email },
+        });
+        if (existingUser) {
+          token.id = existingUser.id;
+        }
+      }
+`,
           },
           {
             label: "성과 및 배운 점",
@@ -91,10 +117,176 @@ export const projects: Project[] = [
           {
             label: "구현 내용",
             text: `Context API 기반 AddressProvider를 도입해 상태를 분리하고, 유효성 검사 로직도 커스텀 훅으로 추출하여 테스트 가능하게 개선했습니다.`,
+            code: `
+// address-context.tsx
+"use client";
+
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { Address } from "@/assets/types/types";
+import { AddressInput } from "../assets/types/types";
+import { useSession } from "next-auth/react";
+
+interface AddressContextType {
+  addresses: Address[];
+  fetchAddresses: () => Promise<void>;
+  addAddress: (addressData: AddressInput) => Promise<void>;
+  deleteAddress: (addresses: number[]) => Promise<void>;
+  loading: boolean;
+  error: string | null;
+}
+
+const AddressContext = createContext<AddressContextType | undefined>(undefined);
+
+export const AddressProvider = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { data: session, status } = useSession();
+
+  const fetchAddresses = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      if (status === "authenticated") {
+        const res = await fetch("/api/address");
+        const data = await res.json();
+        if (data.success) {
+          setAddresses(data.addresses);
+        } else {
+          throw new Error(data.message || "배송지 조회 실패");
+        }
+      }
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addAddress = async (addressData: AddressInput) => {
+    setLoading(true);
+    try {
+      if (!session.user) {
+        return;
+      }
+      setError(null);
+      const res = await fetch("/api/address", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(addressData),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "배송지 추가 실패");
+
+      await fetchAddresses();
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteAddress = async (checkedIds: number[]) => {
+    try {
+      if (!session.user) {
+        return;
+      }
+
+      if (checkedIds.length === 0) {
+        setError(null);
+        throw new Error("삭제할 주소를 선택해주세요.");
+      }
+
+      const res = await fetch("/api/delete-multiple", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: checkedIds }),
+      });
+
+      const result = await res.json();
+      await fetchAddresses();
+      if (!res.ok) {
+        throw new Error(result.message || "주소 삭제 실패");
+      }
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("주소 삭제 중 오류:", error);
+        setError(error.message);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (status === "authenticated") fetchAddresses();
+  }, [status]);
+
+  return (
+    <AddressContext.Provider
+      value={{
+        addresses,
+        fetchAddresses,
+        addAddress,
+        deleteAddress,
+        loading,
+        error,
+      }}
+    >
+      {children}
+    </AddressContext.Provider>
+  );
+};
+
+// validation.ts
+export const validateNewAddress = (newAddress) => {
+  const {
+    addressname,
+    postcode,
+    address,
+    addressMobile1,
+    addressMobile2,
+    addressMobile3,
+  } = newAddress;
+
+  if (!addressname.trim()) {
+    toast.info("이름을 입력해주세요.");
+    return false;
+  }
+
+  if (!postcode.trim()) {
+     toast.info("우편번호를 입력해주세요.");
+    return false;
+  }
+
+  if (!address.trim()) {
+     toast.info("기본주소를 입력해주세요.");
+    return false;
+  }
+
+  const { result } = validateMobileNumber(
+    addressMobile1,
+    addressMobile2,
+    addressMobile3
+  );
+
+  console.log(result);
+
+  if (!result) {
+     toast.info("휴대폰 번호 형식이 올바르지 않습니다.");
+    return false;
+  }
+
+  return true;
+};
+
+`,
           },
           {
             label: "성과 및 배운 점",
-            text: `컴포넌트 가독성과 유지보수성이 향상되었고, 커스텀 훅 분리로 유효성 검사의 테스트 가능성을 높일 수 있었습니다.`,
+            text: `Context API를 통해 전역 상태를 효율적으로 관리하며 유연한 구조를 설계할 수 있었습니다. 컴포넌트 가독성과 유지보수성이 향상되었고, 커스텀 훅 분리로 유효성 검사의 테스트 가능성을 높일 수 있었습니다.`,
           },
         ],
         stack: ["React", "Next.js", "Context API", "TypeScript", "SQLite3"],
@@ -138,6 +330,40 @@ export const projects: Project[] = [
           {
             label: "해결 과정",
             text: `types 폴더에 next-auth.d.ts 파일을 생성하고 'next-auth' 모듈을 확장해 User, Session, JWT 타입에 필요한 커스텀 필드를 정의했습니다. 그리고 tsconfig.json 파일의 types에 'next-auth'가 들어가 있는지 점검했습니다. 이후 useSession()을 사용할 때, 타입 오류 없이 안전하게 사용자 데이터를 활용할 수 있었습니다.`,
+            code: `import { Address } from "@prisma/client";
+import NextAuth, { DefaultSession } from "next-auth";
+
+declare module "next-auth" {
+
+  interface User {
+    id: string;
+    username: string;
+    birthdate: string;
+    mobile: string;
+    provider: string;
+  }
+
+  interface Session {
+    user: {
+      id: string;
+      username: string;
+      birthdate: string;
+      mobile: string;
+      accessToken?: string;
+      provider: string;
+    } & DefaultSession["user"];
+  }
+
+  interface JWT {
+    id: string;
+    email?: string | null;
+    username?: string | null;
+    birthdate?: string | null;
+    mobile?: string | null;
+    provider?: string;
+  }
+}
+`,
           },
           {
             label: "성과 및 배운 점",
@@ -198,6 +424,48 @@ export const projects: Project[] = [
           {
             label: "해결 과정",
             text: `필요한 필드를 중심으로 API 응답을 재구성하고, 타입 정의와 예외 처리를 통해 안정적인 데이터 흐름을 설계했습니다.`,
+            code: `
+ // src/utils/api.ts
+ export async function fetchTMDB(pathname: string) {
+ const res = await fetch(\`\\\${NEXT_PUBLIC_BASE_URL}/\\\${pathname}\`, {
+    method: "GET",
+    headers: {
+      accept: "application/json",
+      Authorization: \\\`Bearer \\\${TMDB_BEARER_TOKEN}\\\`,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(\`TMDB fetch error: \\\${res.status}\`);
+  }
+
+  const data = await res.json();
+
+  if (data.results.length <= 0) return null;
+
+  const filteredResults = data.results.filter(
+    (item: TMDBContent) =>
+      (item.title || item.name) &&
+      item.backdrop_path &&
+      item.poster_path &&
+      item.overview &&
+      item.vote_average &&
+      item.vote_average !== 0
+  );
+
+  return filteredResults;
+}
+
+...
+
+// DetailContentPage.tsx
+const content: TMDBContent = await fetchContentsById(category, id);
+const overview = await fetchKoreanOverview(category, id);
+const credits = await fetchCredits(category, id);
+const people = [...credits?.directors, ...credits?.cast];
+const similarContents = await fetchSimilarContents(category, id);
+const stills = await fetchStills(category, id);
+`,
           },
           {
             label: "성과 및 배운 점",
@@ -207,9 +475,8 @@ export const projects: Project[] = [
         stack: ["TMDB API", "Fetch", "TypeScript", "Next.js", "Tailwind"],
       },
       {
-        title: "태그 기반 영화 추천 시스템 설계",
-        subtitle:
-          "사용자 선호 장르 기반 태그 일치도에 따라 실시간으로 갱신되는 로직 구현",
+        title: "사용자 맞춤형 영화 추천 시스템 설계",
+        subtitle: "사용자 선호 장르 일치도에 따라 콘텐츠 실시간 갱신 로직 구현",
         content: [
           {
             label: "개선 목표",
@@ -217,14 +484,183 @@ export const projects: Project[] = [
           },
           {
             label: "구현 내용",
-            text: `사용자가 별점 평가한 콘텐츠를 기반으로 선호도가 높은 태그를 선별한 후, 그 중에서 선택된 태그에 따라 API 쿼리를 동적으로 구성하고 태그 일치도에 따라 추천 콘텐츠를 정렬하도록 구현했습니다.`,
+            text: `사용자가 별점 평가한 콘텐츠를 기반으로 선호도가 높은 장르를 선별해 API 쿼리를 동적으로 구성해 맞춤형 추천 콘텐츠를 정렬하도록 구현했습니다.`,
+            code: `
+// 평가한 콘텐츠 중 점수가 높은 장르 id 선별 
+function getTopGenres(contents: TMDBContent[], topN = 3): number[] {
+  const genreCountMap: Record<number, number> = {};
+
+  contents.forEach((content) => {
+    content.genres?.forEach((genre) => {
+      genreCountMap[Number(genre.id)] =
+        (genreCountMap[Number(genre.id)] || 0) + 1;
+    });
+  });
+
+  const sortedGenres = Object.entries(genreCountMap)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, topN)
+    .map(([id]) => Number(id));
+
+  return sortedGenres;
+}
+
+// PersonalizedRecommendations.tsx : 선호도 높은 장르들로 API 쿼리 동적 구성
+  useEffect(() => {
+    if (ratedContents.length === 0) return;
+
+    const fetchData = async () => {
+      try {
+        const genres = getTopGenres(ratedContents).map((genre) =>
+          String(genre)
+        );
+        if (genres.length === 0) {
+          setRecommendations([]);
+          return;
+        }
+
+        const data = await fetchRecommendationsByGenreIds(genres, "movie");
+        if (data) {
+          setRecommendations(data);
+        } else {
+          setRecommendations([]);
+        }
+        setError(null);
+      } catch (e) {
+        setError("맞춤 컨텐츠 가져오기 실패");
+      }
+    };
+
+    fetchData();
+  }, [ratedContents]);
+`,
           },
           {
             label: "성과 및 배운 점",
-            text: `평가 내역을 기반으로 선호도를 추리고 정보를 필터링하는 로직을 구현하면서 사용자 맞춤형 컨텐츠 제공이 어떻게 이뤄지는지 경험할 수 있었습니다.`,
+            text: `평가 내역을 기반으로 선호도를 추리고 API 쿼리를 동적으로 구성하면서 사용자 맞춤형 컨텐츠 제공을 위한 설계를 경험할 수 있었습니다.`,
           },
         ],
         stack: ["React", "Next.js", "Fetch", "TMDB API"],
+      },
+      {
+        title: "태그 기반 영화 추천 시스템 설계",
+        subtitle:
+          "사용자 맞춤 태그를 제공하여 선택한 태그를 기반으로 콘텐츠 추천 설계 경험",
+        content: [
+          {
+            label: "개선 목표",
+            text: `사용자의 취향을 반영하면서도, 사용자가 직접 추천 태그를 선택할 수 있도록 하고자 했습니다.`,
+          },
+          {
+            label: "구현 내용",
+            text: `사용자가 콘텐츠를 평가하거나 저장할 때마다 장르 정보를 저장하는 헬퍼 함수를 통해 맞춤 태그를 생성했습니다. 생성된 맞춤 태그와 사용자가 선택한 태그는 Context API를 활용해 전역 상태로 관리하였고, 이를 기반으로 데이터를 가져올 수 있도록 API를 동적으로 구성했습니다.`,
+            code: `
+// helper.ts
+export function saveGenres(
+  content: TMDBContent,
+  savedTags: string[],
+  setSavedTags: (tags: string[]) => void
+) {
+  try {
+    // 맞춤태그용 장르 저장
+    const genres = content.genres?.map((genre: Genre) => genre.name) || [];
+    if (genres.length) {
+      // 중복저장 방지 Set
+      const mergedTags = Array.from(new Set([...savedTags, ...genres]));
+      setSavedTags(mergedTags);
+    }
+  } catch (err) {
+    console.log("TMDB 장르 태그 불러오기 실패", err);
+  }
+}
+
+// tag-context.tsx
+"use client";
+
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  Dispatch,
+  SetStateAction,
+} from "react";
+
+type TagContextType = {
+  savedTags: string[];
+  setSavedTags: Dispatch<SetStateAction<string[]>>;
+  selectedTags: string[];
+  setSelectedTags: Dispatch<SetStateAction<string[]>>;
+};
+
+const TagContext = createContext<TagContextType>({
+  savedTags: [],
+  setSavedTags: () => {},
+  selectedTags: [],
+  setSelectedTags: () => {},
+});
+
+export const TagProvider = ({ children }: { children: React.ReactNode }) => {
+  const [savedTags, setSavedTags] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("TAGS");
+    if (saved) setSavedTags(JSON.parse(saved));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("TAGS", JSON.stringify(savedTags));
+  }, [savedTags]);
+
+  return (
+    <TagContext.Provider
+      value={{ savedTags, setSavedTags, selectedTags, setSelectedTags }}
+    >
+      {children}
+    </TagContext.Provider>
+  );
+};
+
+export const useTags = () => useContext(TagContext);
+
+// RecommendationsPage
+    <div className="mt-10">
+      {selectedTags.length <= 0 && <PersonalizedRecommendations />}
+      <TagResults tags={selectedTags} category={mediaType} />
+    </div>
+    <TagSelectorModal
+      isOpen={isModalOpen}
+      onClose={() => setModalOpen(false)}
+      onSelectTags={(selected) => setSelectedTags(selected)}
+      initialTags={[]}
+    />
+
+// TagResults.tsx : selectedTags로 API 동적 구성
+useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchContentsByTags(tags, category);
+        setContents(data);
+        setError(null);
+      } catch (err) {
+        setError("태그에 해당하는 콘텐츠 불러오기 실패");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (tags.length) fetchData();
+  }, [tags, category]);
+`,
+          },
+          {
+            label: "성과 및 배운 점",
+            text: `사용자 행동 데이터를 기반으로 동적으로 API를 구성한 경험을 통해, 사용자 맞춤형 UX를 위한 데이터 흐름과 상태 관리의 중요성을 체감했습니다. 사용자 입장에서 직관적인 추천 경험을 설계하는 시각을 기를 수 있었습니다.`,
+          },
+        ],
+        stack: ["React", "Context API", "Next.js", "Fetch", "TMDB API"],
       },
       {
         title: "출연진 이미지 데이터 누락 문제 해결",
@@ -237,13 +673,14 @@ export const projects: Project[] = [
           {
             label: "해결 과정",
             text: `이미지 데이터가 없는 경우를 대비해 디폴트 이미지를 저장하고, 이미지가 없을 때 디폴트 이미지가 렌더링되도록 처리하여 UI 안정성을 확보했습니다.`,
+            images: ["/default-img.png", "/default-img-result.png"],
           },
           {
             label: "성과 및 배운 점",
             text: `UI 레이아웃 깨짐 현상이 사라지고, 사용자에게 일관되고 깔끔한 화면을 제공할 수 있게 되었습니다.`,
           },
         ],
-        stack: ["TMDB API", "React", "Next.js"],
+        stack: ["TMDB API", "React", "Next.js", "Tailwind"],
       },
     ],
   },

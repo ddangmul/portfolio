@@ -3,6 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ExternalLink, Github } from "lucide-react";
 import { StickyNav } from "@/components/sticky-nav";
+import Experience from "@/components/experience";
 
 interface pageProps {
   params: Promise<{
@@ -129,43 +130,8 @@ export default async function ProjectDetailPage({ params }: pageProps) {
             ))}
           </ul>
         </section>
-
         {/* 문제 해결 경험 */}
-        <section
-          id="problem-solving"
-          className="mb-4 scroll-mt-40 md:scroll-mt-32"
-        >
-          <p className="text-lg font-bold">기술적 경험 및 문제 해결 사례</p>
-          {project.contents.map((content, index) => (
-            <details key={index} className="border rounded-md p-4 my-2">
-              <summary className="font-semibold cursor-pointer">
-                {content.title} –{" "}
-                <span className="text-sm text-muted-foreground">
-                  {content.subtitle}
-                </span>
-              </summary>
-              <ul className="space-y-1 mt-3">
-                {content.content.map((section, idx) => (
-                  <li key={idx}>
-                    <strong>{section.label}</strong>: {section.text}
-                  </li>
-                ))}
-              </ul>
-              <div className="flex flex-wrap gap-2 pt-3">
-                <strong>사용 기술:</strong>
-                {content.stack.map((tech) => (
-                  <span
-                    key={tech}
-                    className="bg-[#eaeaea] px-2 py-0.5 rounded-sm text-sm"
-                  >
-                    {tech}
-                  </span>
-                ))}
-              </div>
-            </details>
-          ))}
-        </section>
-
+        <Experience project={project} />
         {/* 반응형 디자인 */}
         <section
           id="responsive-design"

@@ -13,7 +13,12 @@ export interface Project {
   contents: {
     title: string;
     subtitle: string;
-    content: { label: string; text: string }[];
+    content: {
+      label: string;
+      text: string;
+      code?: string;
+      images?: string[];
+    }[];
     stack: string[];
   }[];
 }
