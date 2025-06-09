@@ -4,7 +4,7 @@ import { Project } from "@/lib/type";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
-const ProjectCard = ({ key, project }: { key: string; project: Project }) => {
+const ProjectCard = ({ project }: { project: Project }) => {
   const router = useRouter();
   const handleClick = (title: string) => {
     router.push(`/${title}`);

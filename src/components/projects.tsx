@@ -1,7 +1,6 @@
 import { Project } from "@/lib/type";
 import ProjectCard from "./project-card";
 import { projects } from "@/lib/projects";
-import { ChevronDown } from "lucide-react";
 
 const Projects = () => {
   return (

@@ -1,3 +1,5 @@
+/* eslint-disable @next/next/no-html-link-for-pages */
+
 import { projects } from "@/lib/projects";
 import Image from "next/image";
 import { notFound } from "next/navigation";

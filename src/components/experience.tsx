@@ -5,7 +5,6 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Project } from "@/lib/type";
 import Image from "next/image";
-import { ul } from "framer-motion/client";
 
 export default function Experience({ project }: { project: Project }) {
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
