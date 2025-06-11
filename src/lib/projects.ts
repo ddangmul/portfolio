@@ -26,7 +26,6 @@ export const projects: Project[] = [
           "(개발 단계) SQLite3로 스키마 설계 및 데이터 구성 / (배포 단계) PostgreSQL로 전환",
       },
       { label: "API 통신", value: "Fetch API를 활용한 RESTful API 구현" },
-      { label: "테스트", value: "Jest" },
       { label: "배포", value: "Vercel" },
     ],
     liveUrl: "https://online-shop-navy-two.vercel.app/",
