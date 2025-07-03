@@ -387,6 +387,7 @@ declare module "next-auth" {
       { label: "라이브러리", value: "React (Hooks)" },
       { label: "언어", value: "TypeScript" },
       { label: "스타일링", value: "Tailwind CSS" },
+      { label: "상태관리", value: "Zustand" },
       { label: "API 통신", value: "TMDB API, Fetch API" },
       { label: "배포", value: "Vercel" },
     ],
@@ -425,25 +426,31 @@ declare module "next-auth" {
             text: `필요한 필드를 중심으로 API 응답을 재구성하고, 타입 정의와 예외 처리를 통해 안정적인 데이터 흐름을 설계했습니다.`,
             code: `
  // src/utils/api.ts
- export async function fetchTMDB(pathname: string) {
- const res = await fetch(\`\\\${NEXT_PUBLIC_BASE_URL}/\\\${pathname}\`, {
-    method: "GET",
-    headers: {
-      accept: "application/json",
-      Authorization: \\\`Bearer \\\${TMDB_BEARER_TOKEN}\\\`,
-    },
-  });
+// 공통 fetch 함수
+async function fetchFromTMDB<T>(url: string, options: RequestInit = {}) {
+  const headers: Record<string, string> = {
+    accept: "application/json",
+    ...(options.headers as Record<string, string>),
+  };
 
-  if (!res.ok) {
-    throw new Error(\`TMDB fetch error: \\\${res.status}\`);
+  if (TMDB_BEARER_TOKEN) {
+    headers["Authorization"] = 'Bearer \${TMDB_BEARER_TOKEN}';
   }
 
-  const data = await res.json();
+  const res = await fetch(url, {
+    method: "GET",
+    headers,
+    ...options,
+  });
 
-  if (data.results.length <= 0) return null;
+  if (!res.ok) throw new Error('TMDB fetch error: \${res.status}');
+  return res.json() as Promise<T>;
+}
 
-  const filteredResults = data.results.filter(
-    (item: TMDBContent) =>
+// 컨텐츠 필터링 로직
+function filterValidContent(results: TMDBContent[]) {
+  return results.filter(
+    (item) =>
       (item.title || item.name) &&
       item.backdrop_path &&
       item.poster_path &&
@@ -451,19 +458,7 @@ declare module "next-auth" {
       item.vote_average &&
       item.vote_average !== 0
   );
-
-  return filteredResults;
 }
-
-...
-
-// DetailContentPage.tsx
-const content: TMDBContent = await fetchContentsById(category, id);
-const overview = await fetchKoreanOverview(category, id);
-const credits = await fetchCredits(category, id);
-const people = [...credits?.directors, ...credits?.cast];
-const similarContents = await fetchSimilarContents(category, id);
-const stills = await fetchStills(category, id);
 `,
           },
           {
@@ -573,67 +568,42 @@ export function saveGenres(
   }
 }
 
-// tag-context.tsx
+// useTagStore.tsx
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  Dispatch,
-  SetStateAction,
-} from "react";
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
-type TagContextType = {
+type TagState = {
   savedTags: string[];
-  setSavedTags: Dispatch<SetStateAction<string[]>>;
   selectedTags: string[];
-  setSelectedTags: Dispatch<SetStateAction<string[]>>;
+  setSavedTags: (tagg: string[]) => void;
+  setSelectedTags: (tags: string[]) => void;
 };
 
-const TagContext = createContext<TagContextType>({
-  savedTags: [],
-  setSavedTags: () => {},
-  selectedTags: [],
-  setSelectedTags: () => {},
-});
-
-export const TagProvider = ({ children }: { children: React.ReactNode }) => {
-  const [savedTags, setSavedTags] = useState<string[]>([]);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-
-  useEffect(() => {
-    const saved = localStorage.getItem("TAGS");
-    if (saved) setSavedTags(JSON.parse(saved));
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("TAGS", JSON.stringify(savedTags));
-  }, [savedTags]);
-
-  return (
-    <TagContext.Provider
-      value={{ savedTags, setSavedTags, selectedTags, setSelectedTags }}
-    >
-      {children}
-    </TagContext.Provider>
-  );
-};
-
-export const useTags = () => useContext(TagContext);
+export const useTagStore = create<TagState>()(
+  persist(
+    (set) => ({
+      savedTags: [],
+      selectedTags: [],
+      setSavedTags: (tags) => set({ savedTags: tags }),
+      setSelectedTags: (tags) => set({ selectedTags: tags }),
+    }),
+    { name: "TAGS" }
+  )
+);
 
 // RecommendationsPage
-    <div className="mt-10">
-      {selectedTags.length <= 0 && <PersonalizedRecommendations />}
-      <TagResults tags={selectedTags} category={mediaType} />
-    </div>
-    <TagSelectorModal
-      isOpen={isModalOpen}
-      onClose={() => setModalOpen(false)}
-      onSelectTags={(selected) => setSelectedTags(selected)}
-      initialTags={[]}
-    />
+      <div className="mt-10">
+        {selectedTags.length <= 0 && <PersonalizedRecommendations />}
+        <TagResults tags={selectedTags} category={mediaType} />
+      </div>
+      <TagSelectorModal
+        isOpen={isModalOpen}
+        onClose={() => setModalOpen(false)}
+        onSelectTags={(selected) => setSelectedTags(selected)}
+        initialTags={[]}
+      />
 
 // TagResults.tsx : selectedTags로 API 동적 구성
 useEffect(() => {
@@ -659,7 +629,7 @@ useEffect(() => {
             text: `사용자 행동 데이터를 기반으로 동적으로 API를 구성한 경험을 통해, 사용자 맞춤형 UX를 위한 데이터 흐름과 상태 관리의 중요성을 체감했습니다. 사용자 입장에서 직관적인 추천 경험을 설계하는 시각을 기를 수 있었습니다.`,
           },
         ],
-        stack: ["React", "Context API", "Next.js", "Fetch", "TMDB API"],
+        stack: ["React", "Zustand", "Next.js", "Fetch", "TMDB API"],
       },
       {
         title: "출연진 이미지 데이터 누락 문제 해결",
